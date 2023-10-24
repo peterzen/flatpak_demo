@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/storage"
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"fyne.io/systray"
 )
 
 //go:embed Icon.png
@@ -55,6 +56,25 @@ func main() {
 			container.NewHSplit(markdown, preview),
 		),
 	)
+
+	systray.Run(func() {
+		systray.SetTitle("Flatpak Demo")
+		systray.SetTooltip("Demo application")
+
+		mOpen := systray.AddMenuItem("Open", "Open main window")
+		openC := make(chan struct{}) // no buffer. Is ignored if window is currently open
+		go func() {
+			for range mOpen.ClickedCh {
+				select {
+				case openC <- struct{}{}:
+					log.Printf("Received window reopen request from system tray")
+				default:
+					log.Printf("Ignored a window open request from the system tray")
+				}
+			}
+		}()
+
+	}, nil)
 
 	w.Resize(fyne.NewSize(600, 400))
 	w.ShowAndRun()
